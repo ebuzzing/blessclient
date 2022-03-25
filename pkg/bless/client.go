@@ -131,12 +131,12 @@ func (c *baseClient) getCert(
 	awsClient *cziAWS.Client,
 	payload []byte) (*LambdaResponse, error) {
 
-	responseBytes, err := awsClient.Lambda.ExecuteWithQualifier(
+	responseBytes, err := awsClient.Lambda.Execute(
 		ctx,
-		c.conf.LambdaConfig.FunctionName,
-		c.conf.LambdaConfig.FunctionVersion,
+		c.conf.LambdaConfig.FunctionName+":"+*c.conf.LambdaConfig.FunctionVersion,
 		payload,
 	)
+
 	if err != nil {
 		return nil, err
 	}

@@ -1,0 +1,86 @@
+name: learn-tips
+on:
+  push:
+    branches: [INF-6819-blessclient]
+    tags:
+      - 'v*'
+  
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build blessclient
+        run: make build
+      - name: Rename blessclient
+        run: make rename-artifacts OS=linux
+      - name: Create zip file of the artifact
+        run:  zip -r blessclient.zip blessclient_linux_amd64
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: blessclient-linux
+          path: |
+            blessclient.zip
+  build-darwin:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build blessclient
+        run: make build
+      - name: Rename blessclient
+        run: make rename-artifacts OS=darwin
+      - name: Create zip file of the artifact
+        run:  zip -r blessclient.zip blessclient_darwin_amd64
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: blessclient-darwin
+          path: |
+            blessclient.zip
+  release:
+    runs-on: ubuntu-latest
+    needs: [build-linux, build-darwin]
+    steps:
+      - name: version
+        run: echo "0.6.1-teads"
+        id: version
+      - name: Download linux artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: blessclient-linux
+          path: artifacts-linux
+      - name: Download darwin artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: blessclient-darwin
+          path: artifacts-darwin
+      - name: release
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          draft: false
+          prerelease: false
+          release_name: ${{ steps.version.outputs.version }}
+          tag_name: "0.6.1-teads"
+          body_path: ""
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: upload linux artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts-linux/blessclient.zip
+          asset_name: blessclient-${{ steps.version.outputs.version }}-linux-amd64.zip
+          asset_content_type: application/gzip
+      - name: upload darwin artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: artifacts-darwin/blessclient.zip
+          asset_name: blessclient-${{ steps.version.outputs.version }}-darwin-amd64.zip
+          asset_content_type: application/gzip

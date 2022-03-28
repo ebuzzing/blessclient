@@ -5,6 +5,8 @@ LDFLAGS=-ldflags "-w -s -X github.com/chanzuckerberg/blessclient/pkg/util.GitSha
 export GO111MODULE=on
 export CGO_ENABLED=1
 
+OS="darwin"
+
 setup:
 	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- v1.23.8
 	curl -L https://raw.githubusercontent.com/chanzuckerberg/bff/master/download.sh | sh
@@ -28,7 +30,12 @@ release: test ## Create a new tag and let travis_ci do the rest
 
 build: ## build the binary
 	go build ${LDFLAGS} .
-.PHONY: build
+
+
+rename-artifacts: ## build the binary
+	mv blessclient blessclient_$(OS)_amd64
+
+.PHONY: build rename-artifacts
 
 release-prerelease: test build ## release to github as a 'pre-release'
 	version=`./blessclient version`; \
